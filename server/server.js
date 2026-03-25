@@ -3,13 +3,13 @@
    server/server.js
 
    Sits between chatbot.js (frontend) and OpenAI API.
-   Receives conversation history → returns AI reply +
-   silently extracted CRM data + suggestion chips.
+   Receives { message, history, state } → returns { reply, extracted, suggestions }
 
    Start:  node server/server.js
+   Dev:    npm run dev  (nodemon, auto-restarts on save)
    ============================================================ */
 
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env'), override: true });
 
 const express = require('express');
 const cors    = require('cors');
@@ -28,94 +28,31 @@ app.use(cors());
 app.use(express.json());
 
 // ══════════════════════════════════════════════════════════════
-// SYSTEM PROMPT — JRN Events AI Persona
+// SYSTEM PROMPT
 // ══════════════════════════════════════════════════════════════
 const SYSTEM_PROMPT = `
-You are Priya, the AI event consultant for JRN Events — South Florida's premier celebration design company, specializing in South Asian and multicultural weddings, corporate galas, and milestone celebrations. JRN Events is known for breathtaking floral designs, mandap installations, and full-service décor across the greater Miami–Fort Lauderdale area.
+You are the JRN Events chatbot — a warm, celebratory assistant for
+JRN Events, South Florida's premier event decoration company.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━
-YOUR PERSONALITY
-━━━━━━━━━━━━━━━━━━━━━━━━━
-- Warm, enthusiastic, and genuinely excited about every celebration
-- Expert in South Asian traditions — rituals, ceremony flow, regional customs
-- Professional yet conversational — like a knowledgeable friend, not a form
-- Light celebratory tone; use at most ONE emoji per message (✨ 🌸 🎉 🪷)
-- Concise replies: 2–4 sentences max — this is a chat widget, not an email
+YOUR JOB: Collect these fields through natural conversation:
+event_type, ritual_style, decor_events, bundle_quote, event_date,
+guest_size, venue_details, wedding_planner, pinterest_link,
+event_style, decor_elements, decor_budget, name, email, phone,
+preferred_contact
 
-━━━━━━━━━━━━━━━━━━━━━━━━━
-YOUR GOAL
-━━━━━━━━━━━━━━━━━━━━━━━━━
-Gather the information below through natural conversation, asking ONE question at a time.
-Never stack multiple questions in the same message.
+RULES:
+- Ask one topic at a time
+- Be warm and celebratory
+- When you collect a field, append: DATA:{"fieldname":"value"}
+- When offering bounded choices, append: SUGGESTIONS:[opt1]|[opt2]|[opt3]
+- Show suggestions for: event_type, ritual_style, event_style, decor_events
+- Never show suggestions for: name, date, guest count, budget, email, phone
 
-FIELDS TO COLLECT (rough order):
-  1.  event_type        — Wedding / Birthday / Corporate / Anniversary / Other
-  2.  ritual_style      — South Indian / North Indian / Christian / Western / Bengali / Muslim / Sri Lankan / Other  (weddings only)
-  3.  decor_events      — Which ceremonies need décor: Vidhi / Pithi / Haldi / Mehndi / Sangeet / Wedding / Reception
-  4.  bundle_quote      — Interest in Big 3 bundle (Sangeet + Wedding + Reception): Yes / No
-  5.  event_date        — Exact or estimated date
-  6.  guest_size        — Approximate guest count
-  7.  venue_details     — Venue name + city
-  8.  wedding_planner   — Planner name, if any (ask only for weddings; skip if "none")
-  9.  pinterest_link    — Pinterest or inspiration board URL (optional — user can skip)
-  10. event_style       — Traditional & Royal / Modern & Minimalist / Bright & Festive / Undecided
-  11. decor_elements    — Floral / lighting / mandap / centerpieces / backdrop / other
-  12. decor_budget      — Budget range for décor
-  13. name              — Full name
-  14. email             — Email address
-  15. phone             — Phone number
-  16. preferred_contact — Call / Text / Email
-
-━━━━━━━━━━━━━━━━━━━━━━━━━
-DATA EXTRACTION — SILENT MARKERS
-━━━━━━━━━━━━━━━━━━━━━━━━━
-Whenever you learn a field value, emit a DATA marker on a NEW LINE at the very end
-of your message. Use strict JSON — one field per marker:
-
-  DATA:{"event_type": "Wedding"}
-  DATA:{"guest_size": "250"}
-
-Multiple fields learned in one reply → emit multiple DATA lines, each on its own line.
-The frontend strips these markers before displaying the message to the user.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━
-SUGGESTION CHIPS
-━━━━━━━━━━━━━━━━━━━━━━━━━
-For bounded-choice fields, emit a SUGGESTIONS line at the very end of your message
-(after any DATA lines):
-
-  SUGGESTIONS: [Option A] | [Option B] | [Option C]
-
-Show suggestions for:
-  event_type        → SUGGESTIONS: [Wedding] | [Birthday] | [Corporate] | [Anniversary] | [Other]
-  ritual_style      → SUGGESTIONS: [South Indian] | [North Indian] | [Christian] | [Western] | [Bengali] | [Muslim] | [Sri Lankan] | [Other]
-  decor_events      → SUGGESTIONS: [Vidhi] | [Pithi] | [Haldi] | [Mehndi] | [Sangeet] | [Wedding] | [Reception]
-  bundle_quote      → SUGGESTIONS: [Yes — give me the Big 3 quote] | [No, individual events only]
-  event_style       → SUGGESTIONS: [Traditional & Royal] | [Modern & Minimalist] | [Bright & Festive] | [Undecided]
-  preferred_contact → SUGGESTIONS: [Call] | [Text] | [Email]
-
-Do NOT show suggestions for: name, date, guest count, venue, budget, Pinterest link, planner name.
-These are free-text answers only.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━
-CONVERSATION RULES
-━━━━━━━━━━━━━━━━━━━━━━━━━
-1.  ONE question per message — never stack.
-2.  If user says "I don't know" or seems unsure → warmly explain the options, then show suggestions.
-3.  If asked about pricing → say you'll include a personalized quote once you have the full picture.
-4.  If user provides multiple details in one message → extract all, acknowledge them, then ask for the next missing field.
-5.  If user goes off-topic → gently redirect: "I love that! Let me make sure I capture everything for your proposal first — [next question]"
-6.  Never break character — you are always Priya from JRN Events.
-7.  Once name + email are collected → wrap up warmly and let the user know the team will follow up within 24 hours.
-8.  Format: plain conversational text only — no markdown headers, no bullet lists in your reply text.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━
-CONVERSATION OPENER
-━━━━━━━━━━━━━━━━━━━━━━━━━
-Use this exact message for the very first response (when conversation history is empty):
-
-"✨ Hi there! I'm Priya, your personal event consultant at JRN Events — South Florida's celebration design experts! We turn visions into breathtaking realities, from intimate ceremonies to grand 500-guest galas. What special celebration are we creating together?
-SUGGESTIONS: [Wedding] | [Birthday] | [Corporate] | [Anniversary] | [Other]"
+SUGGESTION VALUES:
+- event_type: Wedding, Birthday Party, Corporate Event, Other
+- ritual_style: South Indian, North Indian, Christian, Western, Other
+- event_style: Traditional & Royal, Modern & Minimalist, Bright & Festive, Undecided
+- decor_events: Vidhi, Pithi, Haldi/Holuad, Mehndi/Henna, Grah Shanthi, Sangeet, Wedding, Reception
 `.trim();
 
 // ══════════════════════════════════════════════════════════════
@@ -129,7 +66,7 @@ SUGGESTIONS: [Wedding] | [Birthday] | [Corporate] | [Anniversary] | [Other]"
 function parseDataMarkers(text) {
     const data    = {};
     const pattern = /DATA:(\{[^}]+\})/g;
-    let match;
+    let   match;
 
     while ((match = pattern.exec(text)) !== null) {
         try {
@@ -144,7 +81,7 @@ function parseDataMarkers(text) {
 
 /**
  * Extract suggestion chip labels from a SUGGESTIONS: line.
- * Returns an array of strings, e.g. ['Wedding', 'Birthday', 'Corporate']
+ * Returns an array of strings e.g. ['Wedding', 'Birthday Party', 'Corporate Event']
  */
 function parseSuggestions(text) {
     const match = text.match(/SUGGESTIONS:\s*(.+)/);
@@ -162,7 +99,7 @@ function parseSuggestions(text) {
  */
 function cleanReply(text) {
     return text
-        .replace(/DATA:\{[^}]+\}/g, '')   // remove DATA:{...} markers
+        .replace(/DATA:\{[^}]+\}/g, '')    // remove DATA:{...} markers
         .replace(/SUGGESTIONS:\s*.+/g, '') // remove SUGGESTIONS: line
         .replace(/\n{3,}/g, '\n\n')        // collapse extra blank lines
         .trim();
@@ -172,34 +109,34 @@ function cleanReply(text) {
 // ROUTE — POST /ai-chat
 // ══════════════════════════════════════════════════════════════
 /*
- * Expected request body:
- * {
- *   messages:            [{ role: 'user', content: '...' }],  // current turn
- *   conversationHistory: [{ role, content }, ...]             // prior turns
- * }
+ * Request body:  { message, history, state }
+ *   message  — current user message string
+ *   history  — array of { role, content } prior turns
+ *   state    — current CRM state object (for context, not sent to OpenAI)
  *
- * Response:
- * {
- *   reply:         string,   // clean reply text to display
- *   extractedData: object,   // CRM fields found in this turn
- *   suggestions:   string[], // chip labels (may be empty)
- * }
+ * Response:      { reply, extracted, suggestions }
+ *   reply        — clean text to display in chat
+ *   extracted    — CRM fields parsed from this turn
+ *   suggestions  — chip labels array (may be empty)
  */
 app.post('/ai-chat', async (req, res) => {
+    // ── Log every incoming request ────────────────────────────
+    console.log('\n[JRN AI] ── Incoming request ─────────────────────');
+    console.log('  message :', req.body.message || '(empty — greeting)');
+    console.log('  history :', (req.body.history || []).length, 'turns');
+    console.log('─────────────────────────────────────────────────');
+
     try {
-        const { messages = [], conversationHistory = [] } = req.body;
+        const { message = '', history = [] } = req.body;
 
-        if (!messages.length) {
-            return res.status(400).json({ error: 'messages array is required' });
-        }
+        // Keep only the last 10 turns for cost control
+        const trimmedHistory = history.slice(-10);
 
-        // Keep only the last 10 turns to control token cost
-        const history = conversationHistory.slice(-10);
-
+        // Build messages array for OpenAI
         const openaiMessages = [
             { role: 'system', content: SYSTEM_PROMPT },
-            ...history,
-            ...messages,
+            ...trimmedHistory,
+            ...(message ? [{ role: 'user', content: message }] : []),
         ];
 
         const completion = await openai.chat.completions.create({
@@ -211,29 +148,28 @@ app.post('/ai-chat', async (req, res) => {
 
         const rawReply = completion.choices[0].message.content || '';
 
-        const extractedData = parseDataMarkers(rawReply);
-        const suggestions   = parseSuggestions(rawReply);
-        const reply         = cleanReply(rawReply);
+        const extracted    = parseDataMarkers(rawReply);
+        const suggestions  = parseSuggestions(rawReply);
+        const reply        = cleanReply(rawReply);
 
-        console.log('[JRN AI] Reply snippet:', reply.slice(0, 80) + (reply.length > 80 ? '…' : ''));
-        if (Object.keys(extractedData).length) {
-            console.log('[JRN AI] Extracted data:', extractedData);
+        console.log('[JRN AI] Reply     :', reply.slice(0, 80) + (reply.length > 80 ? '…' : ''));
+        if (Object.keys(extracted).length) {
+            console.log('[JRN AI] Extracted :', extracted);
         }
         if (suggestions.length) {
-            console.log('[JRN AI] Suggestions:', suggestions);
+            console.log('[JRN AI] Chips     :', suggestions);
         }
 
-        res.json({ reply, extractedData, suggestions });
+        res.json({ reply, extracted, suggestions });
 
     } catch (err) {
         console.error('[JRN AI] Error:', err.message);
 
-        // Return a graceful fallback message so the widget doesn't break
         res.status(500).json({
             error:       'AI service unavailable',
             reply:       "I'm having a little trouble on my end — please try again in a moment! 🙏",
-            extractedData: {},
-            suggestions:   [],
+            extracted:   {},
+            suggestions: [],
         });
     }
 });
@@ -241,16 +177,11 @@ app.post('/ai-chat', async (req, res) => {
 // ══════════════════════════════════════════════════════════════
 // ROUTE — POST /mock-submit  (local CRM stand-in)
 // ══════════════════════════════════════════════════════════════
-/*
- * Mirrors the real PHP backend response so saveToServer() works
- * identically in local dev. All lead data is logged to console.
- */
 app.post('/mock-submit', (req, res) => {
     console.log('\n[JRN Mock CRM] ── Lead received ──────────────────');
     console.log(JSON.stringify(req.body, null, 2));
     console.log('──────────────────────────────────────────────────\n');
 
-    // Return the same shape as the real PHP backend
     const sessionToken = req.body.session_token || ('mock_' + Date.now());
     res.json({ success: true, session_token: sessionToken });
 });
@@ -259,8 +190,13 @@ app.post('/mock-submit', (req, res) => {
 // START
 // ══════════════════════════════════════════════════════════════
 app.listen(PORT, () => {
+    const key = process.env.OPENAI_API_KEY || '';
+    const keyPreview = key
+        ? `${key.slice(0, 8)}...${key.slice(-4)} ✅`
+        : '❌ NOT FOUND — check your .env file';
+
     console.log(`\n✅  JRN Events AI Proxy is running`);
     console.log(`    POST http://localhost:${PORT}/ai-chat      → OpenAI GPT-4o-mini`);
     console.log(`    POST http://localhost:${PORT}/mock-submit  → Mock CRM (logs to console)`);
-    console.log(`\n    Make sure OPENAI_API_KEY is set in .env\n`);
+    console.log(`\n    API Key loaded: ${keyPreview}\n`);
 });
