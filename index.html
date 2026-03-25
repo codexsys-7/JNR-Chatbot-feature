@@ -136,68 +136,6 @@
             border-top: 1px solid #1e1e1e;
         }
 
-        /* ── Debug panel (fixed, top-right) ────────────────────── */
-        #debug-panel {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            width: 280px;
-            background: #0d0d14;
-            border: 1px solid #2a2a3a;
-            border-radius: 12px;
-            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-            font-size: 0.74rem;
-            z-index: 99999;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-            overflow: hidden;
-        }
-
-        #debug-panel .debug-header {
-            background: #1a1a28;
-            padding: 8px 14px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: #E0C070;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            border-bottom: 1px solid #2a2a3a;
-            user-select: none;
-        }
-
-        #debug-panel .debug-header .dot {
-            width: 7px;
-            height: 7px;
-            background: #2ecc71;
-            border-radius: 50%;
-            animation: debugPulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes debugPulse {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.3; }
-        }
-
-        #debug-state {
-            padding: 12px 14px;
-            color: #a8d8a8;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 380px;
-            overflow-y: auto;
-        }
-
-        #debug-state::-webkit-scrollbar { width: 3px; }
-        #debug-state::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-
-        .debug-hint {
-            padding: 6px 14px 10px;
-            font-size: 0.68rem;
-            color: #444;
-            border-top: 1px solid #1e1e28;
-        }
     </style>
 </head>
 <body>
@@ -211,13 +149,9 @@
         window.JRN_BRAND_LOGO    = '';
         window.JRN_CATALOGUE_URL = '#catalogue';
 
-        // ── Mock state (exposed for debug panel seed) ─────────────
-        window._jrnMockState = { session_token: 'test-session-123' };
-
         // ── Fetch interceptor: mock the CRM save ──────────────────
         // Intercepts every POST to JRN_SUBMIT_URL so the test page
-        // works without a running server. Logs [CRM SAVE] to console
-        // and updates the live debug panel in real-time.
+        // works without a running server. Logs [CRM SAVE] to console.
         (function () {
             var _realFetch = window.fetch.bind(window);
 
@@ -225,14 +159,10 @@
                 var submitUrl = window.JRN_SUBMIT_URL || '';
 
                 if (typeof url === 'string' && url === submitUrl) {
-                    // Parse and log the CRM payload
                     var payload = {};
                     try { payload = JSON.parse((options || {}).body || '{}'); } catch (e) {}
 
                     console.log('[CRM SAVE] payload:', JSON.stringify(payload, null, 2));
-
-                    // Update the debug panel
-                    _refreshDebugPanel(payload);
 
                     // Simulate 200ms server round-trip
                     return new Promise(function (resolve) {
@@ -253,44 +183,7 @@
                 return _realFetch(url, options);
             };
         })();
-
-        // ── Debug panel updater ───────────────────────────────────
-        function _refreshDebugPanel(payload) {
-            var el = document.getElementById('debug-state');
-            if (!el) return;
-
-            // Pretty-print, highlight set vs unset fields
-            var lines = [];
-            var keys = [
-                'session_token',
-                'event_type', 'ritual_style', 'decor_events', 'bundle_quote',
-                'event_date', 'guest_size', 'venue_details', 'wedding_planner',
-                'pinterest_link', 'event_style', 'decor_elements', 'decor_budget',
-                'name', 'email', 'phone', 'preferred_contact', 'status'
-            ];
-
-            keys.forEach(function (k) {
-                var val = payload[k];
-                if (val !== undefined && val !== null && val !== '') {
-                    lines.push('"' + k + '": "' + val + '"');
-                } else {
-                    lines.push('"' + k + '": —');
-                }
-            });
-
-            el.textContent = '{\n  ' + lines.join(',\n  ') + '\n}';
-        }
     </script>
-
-    <!-- ── Live state debug panel (top-right) ──────────────────── -->
-    <div id="debug-panel">
-        <div class="debug-header">
-            <span class="dot"></span>
-            LIVE STATE MONITOR
-        </div>
-        <pre id="debug-state">{ "session_token": "test-session-123" }</pre>
-        <div class="debug-hint">Updates on every saveToServer() call</div>
-    </div>
 
     <!-- ── Mock site header ────────────────────────────────────── -->
     <header>

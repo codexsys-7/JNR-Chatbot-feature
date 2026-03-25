@@ -40,7 +40,7 @@ guest_size, venue_details, wedding_planner, pinterest_link,
 event_style, decor_elements, decor_budget, name, email, phone,
 preferred_contact
 
-RULES:
+CORE RULES:
 - Ask one topic at a time
 - Be warm and celebratory
 - When you collect a field, append: DATA:{"fieldname":"value"}
@@ -48,10 +48,43 @@ RULES:
 - Show suggestions for: event_type, ritual_style, event_style, decor_events
 - Never show suggestions for: name, date, guest count, budget, email, phone
 
-SUGGESTION VALUES:
-- event_type: Wedding, Birthday Party, Corporate Event, Other
-- ritual_style: South Indian, North Indian, Christian, Western, Other
-- event_style: Traditional & Royal, Modern & Minimalist, Bright & Festive, Undecided
+NEVER RE-ASK COLLECTED FIELDS:
+- A section labeled "FIELDS ALREADY COLLECTED" will appear before each message
+- Never ask for any field listed there — it is already answered
+- Do not re-confirm, re-summarise, or circle back to those fields
+- Pick up from the next uncollected field in the list above
+
+TOPIC PERSISTENCE:
+- If the user goes off-topic or asks a side question, answer it briefly and warmly
+- Then immediately return to the exact field you were collecting before the deviation
+- Use a natural transition like "Now, back to your event — ..."
+- Never restart the conversation from the beginning after a tangent
+
+OPTION NOTES:
+- When presenting a bounded choice, write a brief one-line description for each option
+  in the message text so the user understands what it means before clicking a chip
+- Keep descriptions concise — one short phrase per option is enough
+
+SUGGESTION VALUES AND DESCRIPTIONS:
+- event_type:
+    Wedding (celebrating your union with loved ones)
+    Birthday Party (milestone celebrations — sweet 16, 50th, quinceañera, etc.)
+    Corporate Event (galas, award nights, brand activations, conferences)
+    Other (anniversaries, baby showers, engagements, and more)
+
+- ritual_style:
+    South Indian (silk sarees, kolam, elaborate multi-day rituals)
+    North Indian (vibrant baraat, fire rituals, heavy floral mandaps)
+    Christian (elegant, cross-focused ceremony with classic florals)
+    Western (modern, romantic, non-denominational celebration)
+    Other (mixed cultures, fusion ceremonies, or something unique)
+
+- event_style:
+    Traditional & Royal (rich fabrics, majestic florals, regal gold tones)
+    Modern & Minimalist (clean lines, subtle tones, sleek contemporary décor)
+    Bright & Festive (bold colors, playful energy, maximum celebration vibes)
+    Undecided (share your vibe and we'll guide you to the perfect look)
+
 - decor_events: Vidhi, Pithi, Haldi/Holuad, Mehndi/Henna, Grah Shanthi, Sangeet, Wedding, Reception
 `.trim();
 
@@ -127,7 +160,7 @@ app.post('/ai-chat', async (req, res) => {
     console.log('─────────────────────────────────────────────────');
 
     try {
-        const { message = '', history = [] } = req.body;
+        const { message = '', history = [], state = {} } = req.body;
 
         // Keep only the last 10 turns for cost control
         const trimmedHistory = history.slice(-10);
@@ -136,8 +169,26 @@ app.post('/ai-chat', async (req, res) => {
         const openaiMessages = [
             { role: 'system', content: SYSTEM_PROMPT },
             ...trimmedHistory,
-            ...(message ? [{ role: 'user', content: message }] : []),
         ];
+
+        // Inject already-collected fields as fresh context right before the new message.
+        // This is the key fix for "AI re-asks already answered questions" — the AI always
+        // knows the current state regardless of how much history has been trimmed.
+        const collectedEntries = Object.entries(state)
+            .filter(([k, v]) => v !== undefined && v !== null && v !== '' && k !== 'session_token')
+            .map(([k, v]) => `  ${k}: "${v}"`)
+            .join('\n');
+
+        if (collectedEntries) {
+            openaiMessages.push({
+                role:    'system',
+                content: `FIELDS ALREADY COLLECTED — do NOT ask for these again:\n${collectedEntries}`,
+            });
+        }
+
+        if (message) {
+            openaiMessages.push({ role: 'user', content: message });
+        }
 
         const completion = await openai.chat.completions.create({
             model:       'gpt-4o-mini',
