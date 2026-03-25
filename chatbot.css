@@ -201,6 +201,45 @@
   border-radius: 4px;
 }
 
+/* ── Markdown rendering inside bot bubbles ────────────────────── */
+.jrn-bubble p {
+  margin: 0 0 6px;
+  line-height: 1.55;
+}
+
+.jrn-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.jrn-bubble strong {
+  font-weight: 600;
+  color: var(--jrn-purple);
+}
+
+.jrn-md-list {
+  list-style: none;
+  margin: 6px 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.jrn-md-list li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  line-height: 1.45;
+}
+
+.jrn-md-list li::before {
+  content: '›';
+  color: var(--jrn-purple);
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
 /* Bubbles */
 .jrn-bubble {
   max-width: 88%;

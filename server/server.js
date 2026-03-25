@@ -132,9 +132,10 @@ function parseSuggestions(text) {
  */
 function cleanReply(text) {
     return text
-        .replace(/DATA:\{[^}]+\}/g, '')    // remove DATA:{...} markers
-        .replace(/SUGGESTIONS:\s*.+/g, '') // remove SUGGESTIONS: line
-        .replace(/\n{3,}/g, '\n\n')        // collapse extra blank lines
+        .replace(/DATA:\{[^}]+\}/g, '')               // remove DATA:{...} markers
+        .replace(/SUGGESTIONS:\s*.+/g, '')             // remove SUGGESTIONS: line
+        .replace(/FIELDS ALREADY COLLECTED:[\s\S]*/gi, '') // strip any leaked state context
+        .replace(/\n{3,}/g, '\n\n')                    // collapse extra blank lines
         .trim();
 }
 

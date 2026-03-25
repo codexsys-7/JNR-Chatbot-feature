@@ -159,9 +159,9 @@
 
             hideTyping();
 
-            // Show bot reply
+            // Show bot reply — renderMarkdown handles escaping + formatting
             const reply = data.reply || "I'm sorry, I couldn't get a response. Please try again!";
-            appendMessage('bot', escapeHtml(reply));
+            appendMessage('bot', renderMarkdown(reply));
 
             // Add assistant reply to history
             conversationHistory.push({ role: 'assistant', content: reply });
@@ -243,7 +243,7 @@
         .catch(function(err) { console.error('[JRN] Fetch error:', err); });
     }
 
-    // ── Utility: escape HTML to prevent XSS in user messages ─────
+    // ── Utility: escape HTML to prevent XSS ──────────────────────
     function escapeHtml(text) {
         return text
             .replace(/&/g,  '&amp;')
@@ -251,6 +251,52 @@
             .replace(/>/g,  '&gt;')
             .replace(/"/g,  '&quot;')
             .replace(/'/g,  '&#039;');
+    }
+
+    // ── Utility: render bot reply markdown as clean HTML ─────────
+    // Handles **bold**, list items (- item), and paragraph spacing.
+    // Always escapes HTML first so user-influenced content stays safe.
+    function renderMarkdown(text) {
+        // 1. Escape HTML for safety
+        var safe = escapeHtml(text);
+
+        // 2. Normalise inline list items the AI sometimes writes on one line:
+        //    "consider: - **A** (desc) - **B** (desc)"
+        //    Push each "- " onto its own line so the list parser picks them up.
+        safe = safe.replace(/ - (?=\*\*|[A-Z])/g, '\n- ');
+
+        // 3. Render **bold**
+        safe = safe.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+
+        // 4. Walk lines and build structured HTML
+        var lines      = safe.split('\n');
+        var chunks     = [];
+        var listItems  = [];
+
+        function flushList() {
+            if (listItems.length) {
+                chunks.push(
+                    '<ul class="jrn-md-list"><li>' +
+                    listItems.join('</li><li>') +
+                    '</li></ul>'
+                );
+                listItems = [];
+            }
+        }
+
+        lines.forEach(function (line) {
+            var t = line.trim();
+            if (!t) return;
+            if (t.startsWith('- ')) {
+                listItems.push(t.slice(2));
+            } else {
+                flushList();
+                chunks.push('<p>' + t + '</p>');
+            }
+        });
+        flushList();
+
+        return chunks.join('');
     }
 
     // ══════════════════════════════════════════════════════════════
