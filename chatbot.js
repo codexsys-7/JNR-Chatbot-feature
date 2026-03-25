@@ -160,7 +160,11 @@
         // Clear input field
         if ($textInput) $textInput.value = '';
 
-        // Clear old chips
+        // Clear inline welcome chips (if user typed instead of clicking)
+        var initChips = document.getElementById('jrn-init-chips');
+        if (initChips) initChips.remove();
+
+        // Clear mid-conversation chips above input
         renderSuggestions([]);
 
         // Show user bubble
@@ -380,12 +384,30 @@
         setTimeout(function () {
             appendMessage(
                 'bot',
-                "Hi there! 👋 I'm your personal event planning assistant." +
-                "<br>What special moment are we celebrating today?"
+                "Hi There! 👋 I'm your personal event planning assistant." +
+                "<br>How can I help you today?"
             );
 
-            // Initial suggestion chips
-            renderSuggestions(['Wedding', 'Birthday Party', 'Corporate Event', 'Other']);
+            // Render initial chips inline inside the messages area,
+            // right below the greeting bubble (not at the bottom of the widget)
+            var initLabels = ['Wedding', 'Birthday Party', 'Corporate Event', 'Other'];
+            var initContainer = document.createElement('div');
+            initContainer.id        = 'jrn-init-chips';
+            initContainer.className = 'jrn-inline-chips';
+
+            initLabels.forEach(function (label) {
+                var btn       = document.createElement('button');
+                btn.className = 'jrn-suggestion-chip';
+                btn.textContent = label;
+                btn.addEventListener('click', function () {
+                    initContainer.remove();
+                    sendMessage(label);
+                });
+                initContainer.appendChild(btn);
+            });
+
+            $messages.appendChild(initContainer);
+            scrollBottom();
         }, 600);
     }
 

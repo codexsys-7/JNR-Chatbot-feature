@@ -904,7 +904,15 @@
    AI UPGRADE — Suggestion chips, typing indicator
    ============================================================ */
 
-/* ── Suggestion chips container ─────────────────────────────── */
+/* ── Inline chips (rendered inside messages, below greeting) ─── */
+.jrn-inline-chips {
+    display:        flex;
+    flex-wrap:      wrap;
+    gap:            8px;
+    padding:        2px 16px 4px 52px; /* 52px = avatar width (28) + gap (8) + row padding (16) */
+}
+
+/* ── Suggestion chips container (mid-conversation, above input) ─ */
 #jrn-suggestions {
     display:        flex;
     flex-wrap:      wrap;
