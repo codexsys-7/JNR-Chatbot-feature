@@ -5,31 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JRN Events — Chatbot Test Harness</title>
 
+    <!-- ── Chatbot styles ─────────────────────────────────────── -->
+    <link rel="stylesheet" href="chatbot.css" />
+
     <style>
-        /* ── Reset & base ─────────────────────────────────── */
+        /* ── Reset & base ──────────────────────────────────────── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #fdf8f2;
-            color: #333;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: #111118;
+            color: #ddd;
             min-height: 100vh;
         }
 
-        /* ── Mock site header ─────────────────────────────── */
+        /* ── Mock site header ──────────────────────────────────── */
         header {
             background: linear-gradient(135deg, #1a0a00 0%, #3d1f00 100%);
             padding: 18px 40px;
             display: flex;
             align-items: center;
             gap: 14px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.5);
         }
 
         header .logo-text {
             font-size: 1.5rem;
             font-weight: 800;
-            color: #c8922a;
+            color: #E0C070;
             letter-spacing: 2px;
             text-transform: uppercase;
         }
@@ -39,28 +42,28 @@
             color: #d4a85a;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            opacity: 0.85;
+            opacity: 0.8;
         }
 
-        /* ── Hero section ─────────────────────────────────── */
+        /* ── Hero section ──────────────────────────────────────── */
         .hero {
-            background: linear-gradient(160deg, #fdf3e7 0%, #fce8cc 100%);
+            background: linear-gradient(160deg, #1c1208 0%, #231608 100%);
             padding: 80px 40px;
             text-align: center;
-            border-bottom: 1px solid #f0d9b5;
+            border-bottom: 1px solid #2e1f00;
         }
 
         .hero h1 {
             font-size: 2.4rem;
             font-weight: 800;
-            color: #3d1f00;
+            color: #E0C070;
             margin-bottom: 14px;
             line-height: 1.2;
         }
 
         .hero p {
             font-size: 1.05rem;
-            color: #7a4f20;
+            color: #b89050;
             max-width: 560px;
             margin: 0 auto 28px;
             line-height: 1.7;
@@ -76,90 +79,39 @@
             font-weight: 700;
             cursor: pointer;
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 16px rgba(139,94,10,0.35);
+            box-shadow: 0 4px 16px rgba(139,94,10,0.4);
             transition: transform 0.15s, box-shadow 0.15s;
         }
 
         .hero .cta-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139,94,10,0.45);
+            box-shadow: 0 6px 22px rgba(139,94,10,0.55);
         }
 
-        /* ── Dev info panel ───────────────────────────────── */
-        .dev-panel {
-            background: #fff;
-            border: 1px solid #e8d5b0;
-            border-radius: 12px;
-            padding: 24px 28px;
-            max-width: 680px;
-            margin: 40px auto;
-            font-size: 0.88rem;
-            line-height: 1.8;
-            color: #555;
-        }
-
-        .dev-panel h3 {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #8B5E0A;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .dev-panel code {
-            background: #f5f0e8;
-            border: 1px solid #e0d0b0;
-            border-radius: 5px;
-            padding: 2px 7px;
-            font-size: 0.83rem;
-            color: #5a3a00;
-            font-family: 'Cascadia Code', 'Fira Code', monospace;
-        }
-
-        .dev-panel .status {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .dev-panel .status.ok   { background: #e8f5e9; color: #2e7d32; }
-        .dev-panel .status.warn { background: #fff8e1; color: #f57f17; }
-
-        .endpoint-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 6px 0;
-        }
-
-        /* ── Services grid ────────────────────────────────── */
+        /* ── Services grid ─────────────────────────────────────── */
         .services {
             max-width: 900px;
             margin: 0 auto 60px;
-            padding: 0 24px;
+            padding: 48px 24px 0;
         }
 
         .services h2 {
             text-align: center;
-            font-size: 1.5rem;
-            color: #3d1f00;
+            font-size: 1.4rem;
+            color: #E0C070;
             margin-bottom: 28px;
+            letter-spacing: 0.5px;
         }
 
         .services-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 16px;
         }
 
         .service-card {
-            background: #fff;
-            border: 1px solid #f0d9b5;
+            background: #1a1a24;
+            border: 1px solid #2e2414;
             border-radius: 14px;
             padding: 22px 20px;
             text-align: center;
@@ -168,46 +120,179 @@
 
         .service-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(139,94,10,0.12);
+            box-shadow: 0 6px 20px rgba(139,94,10,0.18);
         }
 
         .service-card .icon { font-size: 2rem; margin-bottom: 10px; }
-        .service-card h4    { font-size: 0.95rem; color: #3d1f00; font-weight: 700; }
-        .service-card p     { font-size: 0.8rem; color: #888; margin-top: 6px; }
+        .service-card h4    { font-size: 0.95rem; color: #E0C070; font-weight: 700; }
+        .service-card p     { font-size: 0.8rem; color: #777; margin-top: 6px; }
 
-        /* ── Footer ───────────────────────────────────────── */
+        /* ── Footer ────────────────────────────────────────────── */
         footer {
             text-align: center;
             padding: 28px;
-            font-size: 0.8rem;
-            color: #bbb;
-            border-top: 1px solid #f0d9b5;
+            font-size: 0.78rem;
+            color: #444;
+            border-top: 1px solid #1e1e1e;
+        }
+
+        /* ── Debug panel (fixed, top-right) ────────────────────── */
+        #debug-panel {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 280px;
+            background: #0d0d14;
+            border: 1px solid #2a2a3a;
+            border-radius: 12px;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.74rem;
+            z-index: 99999;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        #debug-panel .debug-header {
+            background: #1a1a28;
+            padding: 8px 14px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #E0C070;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid #2a2a3a;
+            user-select: none;
+        }
+
+        #debug-panel .debug-header .dot {
+            width: 7px;
+            height: 7px;
+            background: #2ecc71;
+            border-radius: 50%;
+            animation: debugPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes debugPulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        #debug-state {
+            padding: 12px 14px;
+            color: #a8d8a8;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 380px;
+            overflow-y: auto;
+        }
+
+        #debug-state::-webkit-scrollbar { width: 3px; }
+        #debug-state::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        .debug-hint {
+            padding: 6px 14px 10px;
+            font-size: 0.68rem;
+            color: #444;
+            border-top: 1px solid #1e1e28;
         }
     </style>
 </head>
 <body>
 
-    <!-- ═══════════════════════════════════════════════════════
-         CHATBOT CONFIG — Must come BEFORE chatbot.js loads
-         ═══════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════════════
+         CHATBOT CONFIG  —  Must come BEFORE chatbot.js loads
+         ═══════════════════════════════════════════════════════════ -->
     <script>
-        // Point to local files (chatbot.css sits at the same level as index.html)
-        window.JRN_BASE_URL        = './';
+        // ── Window globals chatbot.js reads ──────────────────────
+        window.JRN_SUBMIT_URL    = 'http://localhost:3001/mock-submit';
+        window.JRN_BRAND_LOGO    = '';
+        window.JRN_CATALOGUE_URL = '#catalogue';
 
-        // Mock CRM endpoint served by server/server.js
-        window.JRN_SUBMIT_URL      = 'http://localhost:3001/mock-submit';
+        // ── Mock state (exposed for debug panel seed) ─────────────
+        window._jrnMockState = { session_token: 'test-session-123' };
 
-        // Leave blank for local testing (no logo file needed)
-        window.JRN_BRAND_LOGO      = '';
+        // ── Fetch interceptor: mock the CRM save ──────────────────
+        // Intercepts every POST to JRN_SUBMIT_URL so the test page
+        // works without a running server. Logs [CRM SAVE] to console
+        // and updates the live debug panel in real-time.
+        (function () {
+            var _realFetch = window.fetch.bind(window);
 
-        // These are unused locally but defined to prevent undefined errors
-        window.JRN_CHAT_VISION_URL = 'http://localhost:3001/mock-vision';
-        window.JRN_GET_PDFS_URL    = 'http://localhost:3001/mock-pdfs';
-        window.JRN_EXCEL_URL       = 'http://localhost:3001/mock-excel';
-        window.JRN_CATALOGUE_URL   = '#catalogue';
+            window.fetch = function (url, options) {
+                var submitUrl = window.JRN_SUBMIT_URL || '';
+
+                if (typeof url === 'string' && url === submitUrl) {
+                    // Parse and log the CRM payload
+                    var payload = {};
+                    try { payload = JSON.parse((options || {}).body || '{}'); } catch (e) {}
+
+                    console.log('[CRM SAVE] payload:', JSON.stringify(payload, null, 2));
+
+                    // Update the debug panel
+                    _refreshDebugPanel(payload);
+
+                    // Simulate 200ms server round-trip
+                    return new Promise(function (resolve) {
+                        setTimeout(function () {
+                            var body = JSON.stringify({
+                                success:       true,
+                                session_token: payload.session_token || 'test-session-123'
+                            });
+                            resolve(new Response(body, {
+                                status:  200,
+                                headers: { 'Content-Type': 'application/json' }
+                            }));
+                        }, 200);
+                    });
+                }
+
+                // All other requests (ai-chat, etc.) pass through normally
+                return _realFetch(url, options);
+            };
+        })();
+
+        // ── Debug panel updater ───────────────────────────────────
+        function _refreshDebugPanel(payload) {
+            var el = document.getElementById('debug-state');
+            if (!el) return;
+
+            // Pretty-print, highlight set vs unset fields
+            var lines = [];
+            var keys = [
+                'session_token',
+                'event_type', 'ritual_style', 'decor_events', 'bundle_quote',
+                'event_date', 'guest_size', 'venue_details', 'wedding_planner',
+                'pinterest_link', 'event_style', 'decor_elements', 'decor_budget',
+                'name', 'email', 'phone', 'preferred_contact', 'status'
+            ];
+
+            keys.forEach(function (k) {
+                var val = payload[k];
+                if (val !== undefined && val !== null && val !== '') {
+                    lines.push('"' + k + '": "' + val + '"');
+                } else {
+                    lines.push('"' + k + '": —');
+                }
+            });
+
+            el.textContent = '{\n  ' + lines.join(',\n  ') + '\n}';
+        }
     </script>
 
-    <!-- ── Mock site header ──────────────────────────────────── -->
+    <!-- ── Live state debug panel (top-right) ──────────────────── -->
+    <div id="debug-panel">
+        <div class="debug-header">
+            <span class="dot"></span>
+            LIVE STATE MONITOR
+        </div>
+        <pre id="debug-state">{ "session_token": "test-session-123" }</pre>
+        <div class="debug-hint">Updates on every saveToServer() call</div>
+    </div>
+
+    <!-- ── Mock site header ────────────────────────────────────── -->
     <header>
         <div>
             <div class="logo-text">JRN Events</div>
@@ -215,7 +300,7 @@
         </div>
     </header>
 
-    <!-- ── Hero ──────────────────────────────────────────────── -->
+    <!-- ── Hero ───────────────────────────────────────────────── -->
     <div class="hero">
         <h1>Your Dream Event,<br>Beautifully Crafted</h1>
         <p>
@@ -228,31 +313,7 @@
         </button>
     </div>
 
-    <!-- ── Dev info panel ─────────────────────────────────────── -->
-    <div class="dev-panel">
-        <h3>🛠 Local Dev — Test Harness</h3>
-        <p style="margin-bottom:14px">
-            This page mimics the live site widget embed. Open browser DevTools
-            → <strong>Console</strong> to see lead data logged on every
-            <code>saveToServer()</code> call.
-        </p>
-
-        <div class="endpoint-row">
-            <span>AI Chat endpoint:</span>
-            <code>POST http://localhost:3001/ai-chat</code>
-        </div>
-        <div class="endpoint-row">
-            <span>Mock CRM endpoint:</span>
-            <code>POST http://localhost:3001/mock-submit</code>
-        </div>
-
-        <p style="margin-top:14px; color:#999;">
-            Make sure <code>node server/server.js</code> is running before testing.
-            The chatbot button is in the <strong>bottom-right corner</strong>.
-        </p>
-    </div>
-
-    <!-- ── Services grid ─────────────────────────────────────── -->
+    <!-- ── Services grid ──────────────────────────────────────── -->
     <div class="services">
         <h2>What We Do</h2>
         <div class="services-grid">
@@ -281,11 +342,89 @@
 
     <!-- ── Footer ─────────────────────────────────────────────── -->
     <footer>
-        JRN Events &mdash; South Florida &nbsp;|&nbsp; Local test harness &mdash; not for client delivery
+        JRN Events &mdash; South Florida &nbsp;|&nbsp;
+        Local test harness &mdash; not for client delivery
     </footer>
 
-    <!-- ── Load chatbot (must be last) ─────────────────────────── -->
-    <script src="chatbot.js" defer></script>
+    <!-- ═══════════════════════════════════════════════════════════
+         CHATBOT WIDGET HTML
+         All IDs here must match what chatbot.js expects exactly.
+         ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Toggle button (floating bubble, bottom-right) -->
+    <button id="jrn-toggle" aria-label="Open JRN Events chat">
+        <!-- Chat icon -->
+        <svg class="ico-chat" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
+        </svg>
+        <!-- Close icon -->
+        <svg class="ico-close" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="6"  y1="6" x2="18" y2="18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+    </button>
+
+    <!-- Chat window -->
+    <div id="jrn-window" role="dialog" aria-label="JRN Events Chat">
+
+        <!-- Header -->
+        <div id="jrn-header">
+            <div class="brand">
+                <div>
+                    <div style="font-weight:700; font-size:1rem; letter-spacing:1px; color:#fff;">
+                        JRN Events
+                    </div>
+                    <div style="font-size:0.7rem; opacity:0.8; letter-spacing:0.5px; color:#f5e0a0;">
+                        South Florida's Celebration Experts ✨
+                    </div>
+                </div>
+            </div>
+            <div id="jrn-progress-wrap">
+                <div id="jrn-progress-bar" style="width:0%"></div>
+            </div>
+        </div>
+
+        <!-- Message thread -->
+        <div id="jrn-messages"></div>
+
+        <!-- Legacy decision-tree options — hidden by chatbot.js on init -->
+        <div id="jrn-current-opts"></div>
+
+        <!-- Text input area — shown by chatbot.js on init -->
+        <div id="jrn-input-area" style="display:none">
+            <textarea
+                id="jrn-text-input"
+                placeholder="Type a message…"
+                rows="1"
+                aria-label="Chat message input"
+            ></textarea>
+            <button id="jrn-send-btn" aria-label="Send message">
+                <!-- Paper-plane send icon -->
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"
+                          stroke="#fff" stroke-width="2" stroke-linecap="round"
+                          stroke-linejoin="round" fill="none"/>
+                </svg>
+            </button>
+        </div>
+
+    </div><!-- /#jrn-window -->
+
+    <!-- ── Toggle / close wiring ───────────────────────────────── -->
+    <script>
+        (function () {
+            var $toggle = document.getElementById('jrn-toggle');
+            var $win    = document.getElementById('jrn-window');
+
+            $toggle.addEventListener('click', function () {
+                $toggle.classList.toggle('open');
+                $win.classList.toggle('visible');
+            });
+        })();
+    </script>
+
+    <!-- ── Load AI chatbot engine (must be last) ───────────────── -->
+    <script src="chatbot.js"></script>
 
 </body>
 </html>
