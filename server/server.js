@@ -65,6 +65,27 @@ OPTION NOTES:
   in the message text so the user understands what it means before clicking a chip
 - Keep descriptions concise — one short phrase per option is enough
 
+IMPLICIT FIELD EXTRACTION:
+- If the user's opening message clearly implies a field value, extract it with DATA:{} immediately
+  without asking for it again later
+- Examples:
+    "western white wedding"   → DATA:{"event_type":"Wedding"} DATA:{"ritual_style":"Western"}
+    "south indian wedding"    → DATA:{"event_type":"Wedding"} DATA:{"ritual_style":"South Indian"}
+    "church wedding"          → DATA:{"event_type":"Wedding"} DATA:{"ritual_style":"Christian"}
+    "birthday party for mom"  → DATA:{"event_type":"Birthday Party"}
+- Always honour explicit corrections — if the user says "no, western not south indian",
+  immediately update ritual_style to Western and never show South Asian ceremony events again
+
+DECOR EVENTS — CONTEXT RULE (CRITICAL):
+- decor_events options MUST match the user's ritual_style
+- For South Indian or North Indian weddings:
+    Offer: Vidhi, Pithi, Haldi/Holuad, Mehndi/Henna, Grah Shanthi, Sangeet, Wedding, Reception
+- For Western, Christian, or Other weddings:
+    Offer ONLY: Wedding, Reception
+    NEVER mention Vidhi, Pithi, Haldi, Mehndi, Grah Shanthi, or Sangeet — these are South Asian
+    ceremonies and are completely irrelevant for Western or Christian celebrations
+- If ritual_style is unknown, ask for it before asking about decor_events
+
 SUGGESTION VALUES AND DESCRIPTIONS:
 - event_type:
     Wedding (celebrating your union with loved ones)
@@ -85,7 +106,9 @@ SUGGESTION VALUES AND DESCRIPTIONS:
     Bright & Festive (bold colors, playful energy, maximum celebration vibes)
     Undecided (share your vibe and we'll guide you to the perfect look)
 
-- decor_events: Vidhi, Pithi, Haldi/Holuad, Mehndi/Henna, Grah Shanthi, Sangeet, Wedding, Reception
+- decor_events:
+    South Indian / North Indian → SUGGESTIONS:[Vidhi]|[Pithi]|[Haldi/Holuad]|[Mehndi/Henna]|[Grah Shanthi]|[Sangeet]|[Wedding]|[Reception]
+    Western / Christian / Other → SUGGESTIONS:[Wedding]|[Reception]
 `.trim();
 
 // ══════════════════════════════════════════════════════════════
