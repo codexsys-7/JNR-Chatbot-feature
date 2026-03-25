@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JRN Events — Chatbot Test Harness</title>
+
+    <!-- ── Chatbot styles ─────────────────────────────────────── -->
+    <link rel="stylesheet" href="chatbot.css" />
+
+    <style>
+        /* ── Reset & base ──────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: #111118;
+            color: #ddd;
+            min-height: 100vh;
+        }
+
+        /* ── Mock site header ──────────────────────────────────── */
+        header {
+            background: linear-gradient(135deg, #1a0a00 0%, #3d1f00 100%);
+            padding: 18px 40px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+        }
+
+        header .logo-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #E0C070;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        header .tagline {
+            font-size: 0.78rem;
+            color: #d4a85a;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        /* ── Hero section ──────────────────────────────────────── */
+        .hero {
+            background: linear-gradient(160deg, #1c1208 0%, #231608 100%);
+            padding: 80px 40px;
+            text-align: center;
+            border-bottom: 1px solid #2e1f00;
+        }
+
+        .hero h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #E0C070;
+            margin-bottom: 14px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.05rem;
+            color: #b89050;
+            max-width: 560px;
+            margin: 0 auto 28px;
+            line-height: 1.7;
+        }
+
+        .hero .cta-btn {
+            background: linear-gradient(135deg, #8B5E0A, #AC7820);
+            color: #fff;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 16px rgba(139,94,10,0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .hero .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(139,94,10,0.55);
+        }
+
+        /* ── Services grid ─────────────────────────────────────── */
+        .services {
+            max-width: 900px;
+            margin: 0 auto 60px;
+            padding: 48px 24px 0;
+        }
+
+        .services h2 {
+            text-align: center;
+            font-size: 1.4rem;
+            color: #E0C070;
+            margin-bottom: 28px;
+            letter-spacing: 0.5px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .service-card {
+            background: #1a1a24;
+            border: 1px solid #2e2414;
+            border-radius: 14px;
+            padding: 22px 20px;
+            text-align: center;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .service-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(139,94,10,0.18);
+        }
+
+        .service-card .icon { font-size: 2rem; margin-bottom: 10px; }
+        .service-card h4    { font-size: 0.95rem; color: #E0C070; font-weight: 700; }
+        .service-card p     { font-size: 0.8rem; color: #777; margin-top: 6px; }
+
+        /* ── Footer ────────────────────────────────────────────── */
+        footer {
+            text-align: center;
+            padding: 28px;
+            font-size: 0.78rem;
+            color: #444;
+            border-top: 1px solid #1e1e1e;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         CHATBOT CONFIG  —  Must come BEFORE chatbot.js loads
+         ═══════════════════════════════════════════════════════════ -->
+    <script>
+        // ── Window globals chatbot.js reads ──────────────────────
+        window.JRN_SUBMIT_URL    = 'http://localhost:3001/mock-submit';
+        window.JRN_BRAND_LOGO    = '';
+        window.JRN_CATALOGUE_URL = '#catalogue';
+
+        // ── Fetch interceptor: mock the CRM save ──────────────────
+        // Intercepts every POST to JRN_SUBMIT_URL so the test page
+        // works without a running server. Logs [CRM SAVE] to console.
+        (function () {
+            var _realFetch = window.fetch.bind(window);
+
+            window.fetch = function (url, options) {
+                var submitUrl = window.JRN_SUBMIT_URL || '';
+
+                if (typeof url === 'string' && url === submitUrl) {
+                    var payload = {};
+                    try { payload = JSON.parse((options || {}).body || '{}'); } catch (e) {}
+
+                    console.log('[CRM SAVE] payload:', JSON.stringify(payload, null, 2));
+
+                    // Simulate 200ms server round-trip
+                    return new Promise(function (resolve) {
+                        setTimeout(function () {
+                            var body = JSON.stringify({
+                                success:       true,
+                                session_token: payload.session_token || 'test-session-123'
+                            });
+                            resolve(new Response(body, {
+                                status:  200,
+                                headers: { 'Content-Type': 'application/json' }
+                            }));
+                        }, 200);
+                    });
+                }
+
+                // All other requests (ai-chat, etc.) pass through normally
+                return _realFetch(url, options);
+            };
+        })();
+    </script>
+
+    <!-- ── Mock site header ────────────────────────────────────── -->
+    <header>
+        <div>
+            <div class="logo-text">JRN Events</div>
+            <div class="tagline">South Florida's Celebration Experts</div>
+        </div>
+    </header>
+
+    <!-- ── Hero ───────────────────────────────────────────────── -->
+    <div class="hero">
+        <h1>Your Dream Event,<br>Beautifully Crafted</h1>
+        <p>
+            From intimate ceremonies to grand 500-guest galas —
+            JRN Events brings your vision to life with breathtaking décor,
+            floral artistry, and full-service planning.
+        </p>
+        <button class="cta-btn" onclick="document.getElementById('jrn-toggle').click()">
+            ✨ Plan My Event
+        </button>
+    </div>
+
+    <!-- ── Services grid ──────────────────────────────────────── -->
+    <div class="services">
+        <h2>What We Do</h2>
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="icon">💍</div>
+                <h4>Weddings</h4>
+                <p>South Asian, multicultural &amp; western ceremonies</p>
+            </div>
+            <div class="service-card">
+                <div class="icon">🌺</div>
+                <h4>Floral Design</h4>
+                <p>Mandaps, arches, garlands &amp; centrepieces</p>
+            </div>
+            <div class="service-card">
+                <div class="icon">🎉</div>
+                <h4>Celebrations</h4>
+                <p>Birthdays, anniversaries, galas &amp; more</p>
+            </div>
+            <div class="service-card">
+                <div class="icon">🏢</div>
+                <h4>Corporate Events</h4>
+                <p>Brand activations, galas &amp; conferences</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <footer>
+        JRN Events &mdash; South Florida &nbsp;|&nbsp;
+        Local test harness &mdash; not for client delivery
+    </footer>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         CHATBOT WIDGET HTML
+         All IDs here must match what chatbot.js expects exactly.
+         ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Toggle button (floating bubble, bottom-right) -->
+    <button id="jrn-toggle" aria-label="Open JRN Events chat">
+        <!-- Chat icon -->
+        <svg class="ico-chat" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
+        </svg>
+        <!-- Close icon -->
+        <svg class="ico-close" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="6"  y1="6" x2="18" y2="18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+    </button>
+
+    <!-- Chat window -->
+    <div id="jrn-window" role="dialog" aria-label="JRN Events Chat">
+
+        <!-- Header -->
+        <div id="jrn-header">
+            <div class="brand">
+                <div>
+                    <div style="font-weight:700; font-size:1rem; letter-spacing:1px; color:#fff;">
+                        JRN Events
+                    </div>
+                    <div style="font-size:0.7rem; opacity:0.8; letter-spacing:0.5px; color:#f5e0a0;">
+                        South Florida's Celebration Experts ✨
+                    </div>
+                </div>
+            </div>
+            <div id="jrn-progress-wrap">
+                <div id="jrn-progress-bar" style="width:0%"></div>
+            </div>
+        </div>
+
+        <!-- Message thread -->
+        <div id="jrn-messages"></div>
+
+        <!-- Legacy decision-tree options — hidden by chatbot.js on init -->
+        <div id="jrn-current-opts"></div>
+
+        <!-- Text input area — shown by chatbot.js on init -->
+        <div id="jrn-input-area" style="display:none">
+            <textarea
+                id="jrn-text-input"
+                placeholder="Type a message…"
+                rows="1"
+                aria-label="Chat message input"
+            ></textarea>
+            <button id="jrn-send-btn" aria-label="Send message">
+                <!-- Paper-plane send icon -->
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"
+                          stroke="#fff" stroke-width="2" stroke-linecap="round"
+                          stroke-linejoin="round" fill="none"/>
+                </svg>
+            </button>
+        </div>
+
+    </div><!-- /#jrn-window -->
+
+    <!-- ── Toggle / close wiring ───────────────────────────────── -->
+    <script>
+        (function () {
+            var $toggle = document.getElementById('jrn-toggle');
+            var $win    = document.getElementById('jrn-window');
+
+            $toggle.addEventListener('click', function () {
+                $toggle.classList.toggle('open');
+                $win.classList.toggle('visible');
+            });
+        })();
+    </script>
+
+    <!-- ── Load AI chatbot engine (must be last) ───────────────── -->
+    <script src="chatbot.js"></script>
+
+</body>
+</html>
