@@ -66,28 +66,59 @@
         }, 50);
     }
 
+    // ── Helper: build bot avatar element ─────────────────────────
+    function makeAvatar() {
+        var av = document.createElement('div');
+        av.className = 'jrn-avatar';
+        av.innerHTML = '✦';
+        return av;
+    }
+
     // ── 1. appendMessage ─────────────────────────────────────────
     function appendMessage(role, html) {
-        var el = document.createElement('div');
-        el.className = 'jrn-bubble jrn-' + role;
-        el.innerHTML = html;
-        $messages.appendChild(el);
-        scrollBottom();
-        return el;
+        if (role === 'bot') {
+            // Bot messages: avatar + bubble side by side
+            var row = document.createElement('div');
+            row.className = 'jrn-msg-row';
+            var bubble = document.createElement('div');
+            bubble.className = 'jrn-bubble jrn-bot';
+            bubble.innerHTML = html;
+            row.appendChild(makeAvatar());
+            row.appendChild(bubble);
+            $messages.appendChild(row);
+            scrollBottom();
+            return bubble;
+        } else {
+            // User messages: bubble only, floats right via CSS
+            var el = document.createElement('div');
+            el.className = 'jrn-bubble jrn-user';
+            el.innerHTML = html;
+            $messages.appendChild(el);
+            scrollBottom();
+            return el;
+        }
     }
 
     // ── 2. Typing indicator ───────────────────────────────────────
     function showTyping() {
         hideTyping();
-        var el = document.createElement('div');
-        el.id        = 'jrn-typing';
-        el.className = 'jrn-bubble jrn-bot jrn-typing';
-        el.innerHTML = '<span><i></i><i></i><i></i></span>';
-        $messages.appendChild(el);
+        var row = document.createElement('div');
+        row.id        = 'jrn-typing-row';
+        row.className = 'jrn-msg-row';
+        var bubble = document.createElement('div');
+        bubble.id        = 'jrn-typing';
+        bubble.className = 'jrn-bubble jrn-bot jrn-typing';
+        bubble.innerHTML = '<span><i></i><i></i><i></i></span>';
+        row.appendChild(makeAvatar());
+        row.appendChild(bubble);
+        $messages.appendChild(row);
         scrollBottom();
     }
 
     function hideTyping() {
+        var row = document.getElementById('jrn-typing-row');
+        if (row) { row.remove(); return; }
+        // fallback: remove bare bubble if row not found
         var el = document.getElementById('jrn-typing');
         if (el) el.remove();
     }
@@ -332,12 +363,25 @@
             }
         });
 
+        // ── Welcome hero (shown immediately, before greeting) ─────
+        var hero = document.createElement('div');
+        hero.className = 'jrn-welcome-hero';
+        hero.innerHTML =
+            '<div class="jrn-welcome-av">✦</div>' +
+            '<div class="jrn-welcome-name">JRN Assistant</div>' +
+            '<div class="jrn-welcome-sub">' +
+                '<span class="jrn-online-dot"></span>' +
+                'Online &nbsp;·&nbsp; Replies instantly' +
+            '</div>' +
+            '<div class="jrn-welcome-divider"></div>';
+        $messages.appendChild(hero);
+
         // Opening greeting after a short delay
         setTimeout(function () {
             appendMessage(
                 'bot',
-                "Hi! Welcome to JRN Events — South Florida's celebration experts! 🎉" +
-                "<br>What special moment are we planning today?"
+                "Hi there! 👋 I'm your personal event planning assistant." +
+                "<br>What special moment are we celebrating today?"
             );
 
             // Initial suggestion chips
